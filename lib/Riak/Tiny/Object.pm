@@ -4,8 +4,9 @@ use strict;
 use warnings;
 use Mojo::Base -base;
 use Devel::Dwarn;
+use Riak::Tiny::Link;
 
-has [qw/url client tx/];
+has [qw/url client tx tag/];
 
 sub json {
     shift->tx->res->json;
@@ -45,8 +46,24 @@ sub reset_links {
 sub links {
     my $self = shift;
 
-    return map { { $2 => $1 } if /<\/riak\/(.+)>; (?:riaktag|rel)="(.+)"/ }
-      split ',', $self->tx->res->headers->header('Link');
+    my $url  = $self->tx->req->url;
+    my $host = $url->scheme . '://' . $url->host . ':' . $url->port;
+
+    my $header = $self->tx->res->headers->header('Link');
+    my @links = split ',', substr($header, 0, rindex($header, ','));
+
+    #return map { { $2 => $1 } if /<\/riak\/(.+)>; (?:riaktag|rel)="(.+)"/ }
+    return map {
+
+        /<\/riak\/(.+)>; (?:riaktag)="(.+)"/;
+
+        Riak::Tiny::Link->new(
+            url    => $1,
+            client => $self->client,
+            tag    => $2,
+            host   => $host
+          )
+    } @links;
 }
 
 1;
@@ -72,5 +89,9 @@ Adds a link to another key
 =head2 reset_links
 
 Removes all custom links to other keys
+
+=head2 links
+
+Riak::Tiny::Link objects for each link in current object
 
 =cut
