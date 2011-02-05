@@ -25,10 +25,28 @@ sub add_link {
       if $self->client->put(
         $self->tx->req->url,
         {   'Link'         => $link,
-            'Content-Type' => 'application/json'
+            'Content-Type' => $self->tx->res->headers->content_type,
         },
         $self->tx->res->body
-      )->res->code eq 200;
+      )->res->code eq 204;
+}
+
+sub reset_links {
+    my $self = shift;
+
+    my $link;
+
+    return 1
+      if $self->client->put($self->tx->req->url,
+        {'Content-Type' => $self->tx->res->headers->content_type,},
+        $self->tx->res->body)->res->code eq 204;
+}
+
+sub links {
+    my $self = shift;
+
+    return map { { $2 => $1 } if /<\/riak\/(.+)>; (?:riaktag|rel)="(.+)"/ }
+      split ',', $self->tx->res->headers->header('Link');
 }
 
 1;
@@ -46,5 +64,13 @@ Riak object
 =head2 json
 
 JSON response, transormed into perl structure (hashref|arrayref)
+
+=head2 add_link
+
+Adds a link to another key
+
+=head2 reset_links
+
+Removes all custom links to other keys
 
 =cut
