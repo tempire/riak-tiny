@@ -4,35 +4,58 @@ use Riak::Tiny;
 use Devel::Dwarn;
 
 ok my $n = Riak::Tiny->new(host => 'http://localhost:8098');
-ok my $obj = $n->get('photos/3846452652');
-is ref $obj => 'Riak::Tiny::Object';
 
+ok !$n->new_object(bucket => 'bad/key' => 'value');
+
+ok my $obj = $n->new_object(bucket => key => 'value');
+is ref $obj     => 'Riak::Tiny::Object';
+is $obj->bucket => 'bucket';
+is $obj->key    => 'key';
+is $obj->value  => 'value';
+ok !$obj->json;
+
+ok $obj = $n->get(bucket => 'key');
+is ref $obj     => 'Riak::Tiny::Object';
+is $obj->bucket => 'bucket';
+is $obj->key    => 'key';
+is $obj->value  => 'value';
+
+ok my $obj2 = $n->new_object(bucket => key2 => '{"json":"value"}');
+is_deeply $obj2->json => {json => 'value'};
+
+ok !$obj->add_link;
 ok $obj->add_link(
-    set => 'photosets/72157618164628634',
-    foo => 'bar/baz'
+    obj2 => 'bucket/key2',
+    obj3 => 'bucket/key3',
 );
 
-like $n->get('photos/3846452652')->tx->res->headers->header('Link') =>
-  qr|</riak/photosets/72157618164628634>; riaktag="set"|;
-like $n->get('photos/3846452652')->tx->res->headers->header('Link') =>
-  qr|</riak/bar/baz>; riaktag="foo"|;
-
+like $obj->tx->res->headers->header('Link') =>
+  qr|</riak/bucket/key2>; riaktag="obj2", </riak/bucket/key3>; riaktag="obj3"|;
 ok my @objs = $obj->links;
 is @objs => 2;
 
-is $objs[0]->tag => 'set';
-is $objs[1]->tag => 'foo';
+is $objs[0]->tag => 'obj2';
+is $objs[1]->tag => 'obj3';
 
-is $objs[0]->get->url => 'photosets/72157618164628634';
-is $objs[1]->get->url => 'bar/baz';
+is $objs[0]->linked_to->key => 'key2';
+ok !$objs[1]->linked_to, 'no key3 keyvalue';
 
-#is $objs[2]->get->url => 'photos';
-#ok $objs[2]->get->keys;
+ok $obj->reset_links;
+ok !$obj->links;
+is $obj->get->tx->res->headers->header('Link') => '</riak/bucket>; rel="up"';
 
-#eq_or_diff [$obj->links] =>
-#  [{set => 'photosets/72157618164628634'}, {foo => 'bar/baz'},];
+ok my $bucket = $n->get('bucket');
+is ref $bucket => 'Riak::Tiny::Bucket';
+eq_or_diff [$bucket->keys] => [qw/ key key2 /];
+is $bucket->get('key')->value => 'value';
 
-#ok $obj->reset_links;
-#is $n->get('photos/3846452652')->tx->res->headers->header('Link') => '</riak/photos>; rel="up"';
+ok $obj2->delete, 'delete key2';
+ok !$obj2->get, 'confirmed';
+
+$n->new_object(bucket => key2 => 'value4');
+$n->new_object(bucket => key3 => 'value5');
+is_deeply [sort $bucket->delete_keys] => [qw/key key2 key3/],
+  'delete all keys in bucket';
+ok !$n->get('bucket')->keys, 'confirmed';
 
 done_testing;

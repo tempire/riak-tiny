@@ -5,15 +5,20 @@ use warnings;
 use Mojo::Base -base;
 use Devel::Dwarn;
 use Riak::Tiny::Link;
+use Mojo::JSON;
 
-has [qw/url client tx tag/];
+has [qw/url client tx bucket key value/];
 
 sub json {
-    shift->tx->res->json;
+    my $self = shift;
+    return Mojo::JSON->new->decode($self->value)
+      if $self->tx->res->headers->content_type eq 'application/json';
 }
 
 sub add_link {
     my $self = shift;
+
+    return if !@_;
 
     my $link;
 
@@ -22,14 +27,17 @@ sub add_link {
         $link .= ', ' if @_;
     }
 
-    return 1
-      if $self->client->put(
+    my $tx = $self->client->put(
         $self->tx->req->url,
         {   'Link'         => $link,
             'Content-Type' => $self->tx->res->headers->content_type,
         },
         $self->tx->res->body
-      )->res->code eq 204;
+    );
+
+    return if $tx->res->code != 204;
+
+    return $self->get;
 }
 
 sub reset_links {
@@ -37,10 +45,14 @@ sub reset_links {
 
     my $link;
 
-    return 1
-      if $self->client->put($self->tx->req->url,
+    my $tx =
+      $self->client->put($self->tx->req->url,
         {'Content-Type' => $self->tx->res->headers->content_type,},
-        $self->tx->res->body)->res->code eq 204;
+        $self->tx->res->body);
+
+    return if $tx->res->code != 204;
+
+    return $self->tx($tx);
 }
 
 sub links {
@@ -50,6 +62,8 @@ sub links {
     my $host = $url->scheme . '://' . $url->host . ':' . $url->port;
 
     my $header = $self->tx->res->headers->header('Link');
+    return if !$header;
+
     my @links = split ',', substr($header, 0, rindex($header, ','));
 
     #return map { { $2 => $1 } if /<\/riak\/(.+)>; (?:riaktag|rel)="(.+)"/ }
@@ -64,6 +78,36 @@ sub links {
             host   => $host
           )
     } @links;
+}
+
+sub get {
+    my $self = shift;
+
+    my $url  = $self->tx->req->url;
+    my $host = $url->scheme . '://' . $url->host . ':' . $url->port;
+
+    my $tx =
+      $self->client->get($host . '/riak/' . $self->bucket . '/' . $self->key);
+
+    return if $tx->res->code == 404;
+
+    $self->tx($tx);
+    $self->value($tx->res->body);
+
+    return $self;
+}
+
+sub delete {
+    my $self = shift;
+
+    my $url  = $self->tx->req->url;
+    my $host = $url->scheme . '://' . $url->host . ':' . $url->port;
+
+    my $tx =
+      $self->client->delete(
+        $host . '/riak/' . $self->bucket . '/' . $self->key);
+
+    return $self->tx($tx);
 }
 
 1;
@@ -93,5 +137,13 @@ Removes all custom links to other keys
 =head2 links
 
 Riak::Tiny::Link objects for each link in current object
+
+=head2 get
+
+Refresh object from server, returns object
+
+=head2 delete
+
+Delete keyvalue
 
 =cut
