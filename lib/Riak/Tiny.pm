@@ -18,11 +18,10 @@ sub get {
     my ($bucket, $key) = @_;
 
     my $tx = $self->client->get($self->host . "/riak/$bucket/" . ($key||''));
-    return if $tx->res->code != 200;
+    $@ = $tx->res->code, return if $tx->res->code != 200;
 
     # Key
     if ($key) {
-
         return Riak::Tiny::Object->new(
             client => $self->client,
             tx     => $tx,
@@ -58,6 +57,15 @@ sub new_object {
     );
 }
 
+sub buckets {
+    my $self = shift;
+    my $tx = $self->client->get($self->host . '/riak?buckets=true');
+
+    return if $tx->res->code != 200;
+
+    return @{$tx->res->json->{buckets}};
+}
+
 1;
 
 =head1 NAME
@@ -77,5 +85,9 @@ Get a keyvalue object
 =head2 new_object
 
 Create a keyvalue object, returns L<Riak::Tiny::Object>
+
+=head2 buckets
+
+List of all buckets with keys
 
 =cut

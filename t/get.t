@@ -20,6 +20,8 @@ is $obj->bucket => 'bucket';
 is $obj->key    => 'key';
 is $obj->value  => 'value';
 
+ok grep $_ eq 'bucket', $n->buckets, 'list buckets';
+
 ok my $obj2 = $n->new_object(bucket => key2 => '{"json":"value"}');
 is_deeply $obj2->json => {json => 'value'};
 
