@@ -8,7 +8,7 @@ use Riak::Tiny;
 
 has [qw/url client tag host/];
 
-sub linked_to { Riak::Tiny->new(host => $_[0]->host)->get(split '/', shift->url) }
+sub linked_to { Riak::Tiny->new(host => $_[0]->client->host)->get(split '/', shift->url) }
 
 1;
 

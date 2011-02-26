@@ -1,15 +1,13 @@
 package Riak::Tiny;
 
-use strict;
-use warnings;
 use Mojo::Base -base;
 use Mojo::Client;
-use Devel::Dwarn;
-use Riak::Tiny::Object;
 use Riak::Tiny::Bucket;
+use Riak::Tiny::Client;
+use Riak::Tiny::Object;
 
-has [qw/host/];
-has client => sub { Mojo::Client->new };
+has [qw/host client/];
+has client => sub { Riak::Tiny::Client->new( host => shift->host ) };
 
 use Riak::Tiny;
 
@@ -17,14 +15,13 @@ sub get {
     my $self = shift;
     my ($bucket, $key) = @_;
 
-    my $tx = $self->client->get($self->host . "/riak/$bucket/" . ($key||''));
+    my $tx = $self->client->get("$bucket/" . ($key||''));
     $@ = $tx->res->code, return if $tx->res->code != 200;
 
     # Key
     if ($key) {
         return Riak::Tiny::Object->new(
             client => $self->client,
-            tx     => $tx,
             bucket => $bucket,
             key    => $key,
             value  => $tx->res->body
@@ -34,7 +31,6 @@ sub get {
     # Bucket
     return Riak::Tiny::Bucket->new(
         client => $self->client,
-        tx     => $tx,
         bucket => $bucket,
     );
 }
@@ -43,7 +39,7 @@ sub new_object {
     my $self = shift;
     my ($bucket, $key, $value) = @_;
 
-    my $tx = $self->client->put($self->host . "/riak/$bucket/$key",
+    my $tx = $self->client->put("$bucket/$key",
         {'content-type' => 'application/json'}, $value);
 
     return if $tx->res->code != 204;
@@ -59,7 +55,7 @@ sub new_object {
 
 sub buckets {
     my $self = shift;
-    my $tx = $self->client->get($self->host . '/riak?buckets=true');
+    my $tx = $self->client->get('?buckets=true');
 
     return if $tx->res->code != 200;
 
@@ -75,6 +71,39 @@ Riak::Tiny
 =head1 DESCRIPTION
 
 Use Perl to interact with Riak
+
+=head1 USAGE
+
+    my $r = Riak::Tiny->new( host => 'http://localhost:8098' );
+
+Keys
+
+    my $obj = $r->new_object(bucket => key => 'value');
+    say $obj->bucket, $obj->key, $obj->value;
+
+Buckets
+
+    my $bucket = $r->bucket('bucket');
+    say $_ for $bucket->keys;
+
+    $bucket->delete_keys;
+
+Links
+
+    $obj->add_link(
+        tag1 => 'bucket/key2',
+        tag2 => 'bucket/key3',
+    );
+
+    # Get links
+    my ($tag1, $tag2) = $obj->links;
+    print $tag1->tag, $tag2->tag;
+
+    # Linked-to key
+    my $obj1 = $tag1->linked_to;
+    print $obj1->bucket, $obj1->key, $obj1->value;
+
+    $obj->clear_links;
 
 =head1 METHODS
 

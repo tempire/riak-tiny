@@ -12,25 +12,28 @@ has [qw/url client tx bucket/];
 sub keys {
     my $self = shift;
 
-    my $url = $self->tx->req->url;
-
-    return @{$self->client->get($url . "?keys=true")->res->json->{keys}};
+    return
+      @{$self->client->get($self->bucket . "?keys=true")->res->json->{keys}};
 }
 
 sub get {
-    my $self = shift;
-    my $key  = shift;
+    my $self   = shift;
+    my $bucket = $self->bucket;
+    my $key    = shift || '';
 
-    my $url  = $self->tx->req->url;
-    my $host = $url->scheme . '://' . $url->host . ':' . $url->port;
-
-    return Riak::Tiny->new(host => $host)->get($self->bucket => $key);
+    my $tx = $self->client->get("$bucket/$key");
+    $@ = $tx->res->code, return if $tx->res->code != 200;
+warn $tx->res->body;
+    return Riak::Tiny::Object->new(
+        client => $self->client,
+        bucket => $bucket,
+        key    => $key,
+        value  => $tx->res->body
+    );
 }
 
 sub delete_keys {
     my $self = shift;
-
-    my $url = $self->tx->req->url;
 
     return map {
         Riak::Tiny::Object->new(

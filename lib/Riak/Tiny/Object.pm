@@ -1,18 +1,15 @@
 package Riak::Tiny::Object;
 
-use strict;
-use warnings;
 use Mojo::Base -base;
-use Devel::Dwarn;
-use Riak::Tiny::Link;
 use Mojo::JSON;
+use Riak::Tiny::Link;
 
-has [qw/url client tx bucket key value/];
+has [qw/url client bucket key value/];
 
 sub json {
     my $self = shift;
     return Mojo::JSON->new->decode($self->value)
-      if $self->tx->res->headers->content_type eq 'application/json';
+      if $self->client->tx->res->headers->content_type eq 'application/json';
 }
 
 sub add_link {
@@ -27,12 +24,14 @@ sub add_link {
         $link .= ', ' if @_;
     }
 
-    my $tx = $self->client->put(
-        $self->tx->req->url,
+    my $tx = $self->client->tx;
+
+    $tx = $self->client->put(
+        $self->bucket . '/' . $self->key,
         {   'Link'         => $link,
-            'Content-Type' => $self->tx->res->headers->content_type,
+            'Content-Type' => $tx->res->headers->content_type,
         },
-        $self->tx->res->body
+        $tx->res->body
     );
 
     return if $tx->res->code != 204;
@@ -40,28 +39,31 @@ sub add_link {
     return $self->get;
 }
 
-sub reset_links {
+sub clear_links {
     my $self = shift;
 
     my $link;
 
-    my $tx =
-      $self->client->put($self->tx->req->url,
-        {'Content-Type' => $self->tx->res->headers->content_type,},
-        $self->tx->res->body);
+    my $tx = $self->client->tx;
+
+    $tx = $self->client->put(
+        $self->bucket . '/' . $self->key,
+        {'Content-Type' => $tx->res->headers->content_type},
+        $tx->res->body
+    );
 
     return if $tx->res->code != 204;
 
-    return $self->tx($tx);
+    return $self;
 }
 
 sub links {
     my $self = shift;
 
-    my $url  = $self->tx->req->url;
-    my $host = $url->scheme . '://' . $url->host . ':' . $url->port;
+    #my $url  = $self->tx->req->url;
+    #my $host = $url->scheme . '://' . $url->host . ':' . $url->port;
 
-    my $header = $self->tx->res->headers->header('Link');
+    my $header = $self->client->tx->res->headers->header('Link');
     return if !$header;
 
     my @links = split ',', substr($header, 0, rindex($header, ','));
@@ -75,7 +77,8 @@ sub links {
             url    => $1,
             client => $self->client,
             tag    => $2,
-            host   => $host
+
+            #host   => $host
           )
     } @links;
 }
@@ -83,15 +86,10 @@ sub links {
 sub get {
     my $self = shift;
 
-    my $url  = $self->tx->req->url;
-    my $host = $url->scheme . '://' . $url->host . ':' . $url->port;
-
-    my $tx =
-      $self->client->get($host . '/riak/' . $self->bucket . '/' . $self->key);
+    my $tx = $self->client->get($self->bucket . '/' . $self->key);
 
     return if $tx->res->code == 404;
 
-    $self->tx($tx);
     $self->value($tx->res->body);
 
     return $self;
@@ -100,14 +98,7 @@ sub get {
 sub delete {
     my $self = shift;
 
-    my $url  = $self->tx->req->url;
-    my $host = $url->scheme . '://' . $url->host . ':' . $url->port;
-
-    my $tx =
-      $self->client->delete(
-        $host . '/riak/' . $self->bucket . '/' . $self->key);
-
-    return $self->tx($tx);
+    return $self->client->delete($self->bucket . '/' . $self->key);
 }
 
 1;
@@ -130,7 +121,7 @@ JSON response, transormed into perl structure (hashref|arrayref)
 
 Adds a link to another key
 
-=head2 reset_links
+=head2 clear_links
 
 Removes all custom links to other keys
 
