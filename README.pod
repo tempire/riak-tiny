@@ -2,10 +2,6 @@
 
 Riak::Tiny - Lightweight interface to Riak
 
-=head1 DESCRIPTION
-
-Use Perl to interact with Riak
-
 =head1 USAGE
 
     my $r = Riak::Tiny->new( host => 'http://localhost:8098' );
@@ -38,19 +34,5 @@ Links
     print $obj1->bucket, $obj1->key, $obj1->value;
 
     $obj->clear_links;
-
-=head1 METHODS
-
-=head2 get
-
-Get a keyvalue object
-
-=head2 new_object
-
-Create a keyvalue object, returns L<Riak::Tiny::Object>
-
-=head2 buckets
-
-List of all buckets with keys
 
 =cut
