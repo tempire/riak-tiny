@@ -9,7 +9,7 @@ use Riak::Tiny::Object;
 has [qw/host client/];
 has client => sub { Riak::Tiny::Client->new( host => shift->host ) };
 
-use Riak::Tiny;
+our $VERSION = '0.01';
 
 sub get {
     my $self = shift;
@@ -66,7 +66,7 @@ sub buckets {
 
 =head1 NAME
 
-Riak::Tiny
+Riak::Tiny - Lightweight interface to Riak
 
 =head1 DESCRIPTION
 
