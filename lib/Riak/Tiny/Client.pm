@@ -19,3 +19,21 @@ sub build_tx {
 }
 
 1;
+
+=head1 NAME
+
+Riak::Tiny::Client
+
+=head1 DESCRIPTION
+
+Subclass of Mojo::Client, making the host persistent.
+
+=head1 METHODS
+
+Riak::Tiny::Client inherits all methods from Mojo::Client and implements the following new ones.
+
+=head2 build_tx
+
+Builds a transaction using a persistently stored hostname
+
+=cut

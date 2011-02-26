@@ -24,6 +24,6 @@ Riak link
 
 =head2 linked_to
 
-Gets Riak keyvalue that this link links to.  Alias for Riak::Tiny->get
+Returns list of L<Riak::Tiny::Object>s that current object links to.
 
 =cut
