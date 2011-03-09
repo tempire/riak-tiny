@@ -1,5 +1,5 @@
 use Riak::Tiny;
-use Test::Most;
+use Test::More;
 
 ok my $n = Riak::Tiny->new(host => 'http://localhost:8098');
 
@@ -35,7 +35,7 @@ subtest 'delete bucket keys' => sub {
     ok $n->new_object(bucket => key3 => 'value3');
 
     ok my $bucket = $n->get('bucket');
-    eq_or_diff [sort $bucket->keys] => [qw/ key key2 key3 /];
+    is_deeply [sort $bucket->keys] => [qw/ key key2 key3 /];
 
     is_deeply [sort $bucket->delete_keys] => [qw/key key2 key3/],
       'delete all keys in bucket';
@@ -81,7 +81,7 @@ subtest 'list buckets and bucket keys' => sub {
     ok grep $_ eq 'bucket', $n->buckets, 'list buckets';
     ok my $bucket = $n->get('bucket');
     is ref $bucket => 'Riak::Tiny::Bucket';
-    eq_or_diff [$bucket->keys] => [qw/ key key2 /];
+    is_deeply [$bucket->keys] => [qw/ key key2 /];
 };
 
 done_testing;

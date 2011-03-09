@@ -3,7 +3,6 @@ package Riak::Tiny::Bucket;
 use strict;
 use warnings;
 use Mojo::Base -base;
-use Devel::Dwarn;
 use Riak::Tiny;
 use Riak::Tiny::Object;
 
@@ -23,7 +22,7 @@ sub get {
 
     my $tx = $self->client->get("$bucket/$key");
     $@ = $tx->res->code, return if $tx->res->code != 200;
-warn $tx->res->body;
+
     return Riak::Tiny::Object->new(
         client => $self->client,
         bucket => $bucket,

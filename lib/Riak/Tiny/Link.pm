@@ -3,7 +3,6 @@ package Riak::Tiny::Link;
 use strict;
 use warnings;
 use Mojo::Base -base;
-use Devel::Dwarn;
 use Riak::Tiny;
 
 has [qw/url client tag host/];
