@@ -8,7 +8,7 @@ use Riak::Tiny::Object;
 has [qw/host client/];
 has client => sub { Riak::Tiny::Client->new( host => shift->host ) };
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub get {
     my $self = shift;
