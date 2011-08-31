@@ -4,6 +4,8 @@ Riak::Tiny - Lightweight interface to Riak
 
 =head1 INSTALL
 
+Tests require a Riak instance listening on http://localhost:8098
+
     curl -L cpanmin.us | perl - https://github.com/tempire/riak-tiny/raw/master/Riak-Tiny-0.01.tar.gz
 
 =head1 USAGE

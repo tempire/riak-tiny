@@ -1,7 +1,6 @@
 package Riak::Tiny;
 
 use Mojo::Base -base;
-use Mojo::Client;
 use Riak::Tiny::Bucket;
 use Riak::Tiny::Client;
 use Riak::Tiny::Object;

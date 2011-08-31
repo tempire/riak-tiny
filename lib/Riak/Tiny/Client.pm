@@ -1,8 +1,8 @@
 package Riak::Tiny::Client;
 
-use Mojo::Base 'Mojo::Client';
+use Mojo::Base 'Mojo::UserAgent';
 
-__PACKAGE__->attr([qw/ host /]);
+__PACKAGE__->attr([qw/ host tx /]);
 
 sub build_tx {
     my $self   = shift;
@@ -26,11 +26,11 @@ Riak::Tiny::Client
 
 =head1 DESCRIPTION
 
-Subclass of Mojo::Client, making the host persistent.
+Subclass of Mojo::UserAgent, making the host persistent.
 
 =head1 METHODS
 
-Riak::Tiny::Client inherits all methods from Mojo::Client and implements the following new ones.
+Riak::Tiny::Client inherits all methods from Mojo::UserAgent and implements the following new ones.
 
 =head2 build_tx
 
