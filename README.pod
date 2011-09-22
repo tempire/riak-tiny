@@ -6,7 +6,7 @@ Riak::Tiny - Lightweight interface to Riak
 
 Tests require a Riak instance listening on http://localhost:8098
 
-    curl -L cpanmin.us | perl - https://github.com/tempire/riak-tiny/raw/master/Riak-Tiny-0.01.tar.gz
+    curl -L cpanmin.us | perl - https://github.com/tempire/riak-tiny/raw/master/Riak-Tiny-0.02.tar.gz
 
 =head1 USAGE
 
@@ -19,7 +19,7 @@ Keys
 
 Buckets
 
-    my $bucket = $r->bucket('bucket');
+    my $bucket = $r->get('bucket');
     say $_ for $bucket->keys;
 
     $bucket->delete_keys;

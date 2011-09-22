@@ -82,7 +82,7 @@ Keys
 
 Buckets
 
-    my $bucket = $r->bucket('bucket');
+    my $bucket = $r->get('bucket');
     say $_ for $bucket->keys;
 
     $bucket->delete_keys;
